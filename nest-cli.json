@@ -1,0 +1,8 @@
+{
+  "project": {
+    "name": "fuse-challenge",
+    "root": "src",
+    "prefix": "app",
+    "sourceRoot": "src"
+  }
+}
