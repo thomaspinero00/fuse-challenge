@@ -16,7 +16,6 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   const port = config.get('APP_PORT');
 
-  // TODO: Check
   app.useGlobalPipes(new CustomValidationDTO());
   app.useGlobalInterceptors(new ResponseInterceptor());
 
@@ -24,4 +23,5 @@ async function bootstrap() {
     Logger.log(`API running in ${config.get('NODE_ENV')} mode on port ${port}`, 'API started');
   });
 }
+
 bootstrap();

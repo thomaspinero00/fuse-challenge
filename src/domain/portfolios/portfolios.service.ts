@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import { Portfolio } from 'src/services/data-services/entities/portfolio.entity';
@@ -13,15 +13,19 @@ export class PortfolioService {
     private readonly configService: ConfigService,
   ) {}
 
-  async getPortfolio(userId: string): Promise<Portfolio> {
-    const defaultUserId = this.configService.get('DEFAULT_USER_ID');
+  async getPortfolio(): Promise<Portfolio> {
+    try {
+      const defaultUserId = this.configService.get('DEFAULT_USER_ID');
 
-    const portfolio = await this.portfolioRepository.findOne({ user: new mongoose.Types.ObjectId(defaultUserId) });
+      const portfolio = await this.portfolioRepository.findOne({ user: new mongoose.Types.ObjectId(defaultUserId) });
 
-    if (!portfolio) {
-      throw new NotFoundException(`Portfolio not found for user ${userId}`);
+      if (!portfolio) {
+        throw new NotFoundException(`Portfolio not found.`);
+      }
+
+      return portfolio;
+    } catch (error) {
+      throw new InternalServerErrorException( `Error getting portfolio: ${error}`);
     }
-
-    return portfolio;
   }
 }

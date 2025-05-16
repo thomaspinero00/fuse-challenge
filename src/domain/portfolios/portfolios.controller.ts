@@ -1,15 +1,21 @@
-// portfolio/portfolio.controller.ts
-import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PortfolioService } from './portfolios.service';
 
 @Controller('portfolio')
 export class PortfolioController {
   constructor(private readonly portfolioService: PortfolioService) {}
 
-  @Get(':userId')
-  async getPortfolio(@Param('userId') userId: string) {
-    const portfolio = await this.portfolioService.getPortfolio(userId);
+  @Get('my-portfolio')
+  async getPortfolio() {
+    try {
+      const portfolio = await this.portfolioService.getPortfolio();
+      return portfolio;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
 
-    return portfolio;
+      throw new InternalServerErrorException('Error fetching portfolio: ' + error.message);
+    }
   }
 }

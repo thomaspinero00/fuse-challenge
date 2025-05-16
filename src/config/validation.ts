@@ -14,4 +14,8 @@ export const validationSchema = Joi.object({
   AWS_SES_SENDER_EMAIL: Joi.string().required(),
 
   DEFAULT_USER_ID: Joi.string().required(),
+
+  // Vendor API
+  VENDOR_API_KEY: Joi.string().required(),
+  VENDOR_URI: Joi.string().required(),
 });

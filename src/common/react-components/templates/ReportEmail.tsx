@@ -13,16 +13,56 @@ export const ReportEmailTemplate: React.FC<ReportEmailTemplateProps> = ({ user, 
   return (
     <Html>
       <Head />
-      <Preview>Hello friend this is the preview</Preview>
+      <Preview>Daily Transactions Report</Preview>
       <Body style={styles.main}>
-        <p>Hola hola hola, {user.name}</p>
+        <Container style={styles.container}>
+          <Section>
+            <Text style={styles.header}>Fuse Challenge - Daily Transactions Report</Text>
+          </Section>
 
-        <p>Transactions:</p>
-        {transactions.map((transaction, index) => (
-          <p key={index}>
-            {transaction.symbol}: {transaction.quantity} shares at ${transaction.price} each / {transaction.status}
-          </p>
-        ))}
+          <Section>
+            <Text style={styles.greeting}>Hello, {user.name}!</Text>
+            <Text style={styles.paragraph}>These are your transactions of today:</Text>
+            <div style={styles.tableContainer}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.tableHeader}>Symbol</th>
+                    <th style={styles.tableHeader}>Quantity</th>
+                    <th style={styles.tableHeader}>Price Each</th>
+                    <th style={styles.tableHeader}>Status</th>
+                    <th style={styles.tableHeader}>Date & Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.length > 0 ? (
+                    transactions.map((transaction, index) => (
+                      <tr key={index} style={styles.tableRow}>
+                        <td style={styles.tableData}>{transaction.symbol}</td>
+                        <td style={styles.tableData}>{transaction.quantity}</td>
+                        <td style={styles.tableData}>${transaction.price}</td>
+                        <td style={styles.tableData}>{transaction.status}</td>
+                        <td style={styles.tableData}>{new Date(transaction.createdAt).toLocaleString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} style={styles.noTransaction}>
+                        No transactions were executed today.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+
+          <Section>
+            <Text style={styles.footerText}>
+              Thank you for using our service! If you have any questions, feel free to contact us.
+            </Text>
+          </Section>
+        </Container>
       </Body>
     </Html>
   );

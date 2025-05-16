@@ -1,17 +1,8 @@
-import {
-  CreateTemplateCommand,
-  CreateTemplateRequest,
-  SendBulkTemplatedEmailCommand,
-  SendBulkTemplatedEmailCommandInput,
-  SendEmailCommand,
-  SendEmailRequest,
-  SESClient,
-} from '@aws-sdk/client-ses';
-import { HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { SendEmailCommand, SendEmailRequest, SESClient } from '@aws-sdk/client-ses';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { render } from '@react-email/components';
-import { readFileSync } from 'fs';
-import { join, resolve } from 'path';
+
 import { IEmailServices } from 'src/common/interfaces/email-service.interface';
 
 import React from 'react';
@@ -26,6 +17,7 @@ export class SESService implements IEmailServices {
     const secretAccessKey = this.configService.get('AWS_SECRET_ACCESS_KEY');
     const accessKeyId = this.configService.get('AWS_ACCESS_KEY');
     const region = this.configService.get('AWS_REGION');
+
     this.sesClient = new SESClient({
       region,
       credentials: {
@@ -33,6 +25,7 @@ export class SESService implements IEmailServices {
         secretAccessKey,
       },
     });
+
     this.senderEmail = this.configService.get('AWS_SES_SENDER_EMAIL') || '';
   }
 
@@ -46,7 +39,7 @@ export class SESService implements IEmailServices {
       throw new HttpException('Template de email no soportado', HttpStatus.BAD_REQUEST);
     }
 
-    // Renderizar el componente a HTML
+    // Renderize HTML
     let html: string;
     try {
       html = await render(emailComponent);
