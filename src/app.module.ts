@@ -1,17 +1,33 @@
-import { Module } from '@nestjs/common';
-import { StocksModule } from './stocks/stocks.module';
+import { DynamicModule, Module, NestModule } from '@nestjs/common';
+import { StocksModule } from './domain/stocks/stocks.module';
 
-// import { PortfoliosModule } from './portfolios/portfolios.module';
-// import { TransactionsModule } from './transactions/transactions.module';
-// import { ReportsModule } from './reports/reports.module';
+import { AppController } from './app.controller';
+import { ConfigModule } from '@nestjs/config';
+import { PortfolioModule } from './domain/portfolios/portfolios.module';
+import { DatabaseModule } from './services/data-services/database.module';
+import { SchedulerModule } from './domain/reports/report-scheduler.module';
+import { EmailServicesModule } from './services/email-services/email-services.module';
 
-
-@Module({
-  imports: [
-    StocksModule,
-    // PortfoliosModule,
-    // TransactionsModule,
-    // ReportsModule,
-  ],
-})
-export class AppModule {}
+@Module({})
+export class AppModule implements NestModule {
+  static forRoot(environments: object): DynamicModule {
+    return {
+      module: AppModule,
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [() => environments],
+          cache: true,
+        }),
+        DatabaseModule,
+        EmailServicesModule,
+        StocksModule,
+        PortfolioModule,
+        SchedulerModule,
+      ],
+      controllers: [AppController],
+      providers: [],
+    };
+  }
+  configure(): void {}
+}

@@ -17,5 +17,5 @@
   "quoteProps": "as-needed",
   "requirePragma": false,
   "vueIndentScriptAndStyle": false,
-  "plugins": ["prettier-plugin-organize-imports"]
+  "plugins": []
 }
