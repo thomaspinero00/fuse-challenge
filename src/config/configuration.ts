@@ -1,8 +1,10 @@
 export const configuration = () => {
   return {
-    // Generals
+    // System
     NODE_ENV: process.env.NODE_ENV || 'dev',
     APP_PORT: process.env.APP_PORT || 8080,
+    API_TOKEN: process.env.API_TOKEN,
+    DEFAULT_USER_ID: process.env.DEFAULT_USER_ID,
 
     // Mongodb
     MONGODB_READ_WRITE_URI: process.env.MONGODB_READ_WRITE_URI,
@@ -14,7 +16,9 @@ export const configuration = () => {
     AWS_ACCOUNT_ID: process.env.AWS_ACCOUNT_ID,
     AWS_SES_SENDER_EMAIL: process.env.AWS_SES_SENDER_EMAIL,
 
-    DEFAULT_USER_ID: process.env.DEFAULT_USER_ID,
+    // Redis
+    REDIS_HOST: process.env.REDIS_HOST,
+    REDIS_PORT: process.env.REDIS_PORT,
 
     // Vendor API
     VENDOR_API_KEY: process.env.VENDOR_API_KEY,

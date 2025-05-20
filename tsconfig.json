@@ -21,9 +21,9 @@
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "paths": {
-      "@common": ["libs/common"],
-      "@services": ["libs/services"],
-      "@config": ["libs/config"]
+      "@common": ["src/common"],
+      "@services": ["src/services"],
+      "@config": ["src/config"]
     }
   }
 }

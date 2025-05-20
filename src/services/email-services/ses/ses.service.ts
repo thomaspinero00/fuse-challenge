@@ -2,9 +2,7 @@ import { SendEmailCommand, SendEmailRequest, SESClient } from '@aws-sdk/client-s
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { render } from '@react-email/components';
-
 import { IEmailServices } from 'src/common/interfaces/email-service.interface';
-
 import React from 'react';
 import { getEmailComponent } from 'src/common/utils/email-template';
 

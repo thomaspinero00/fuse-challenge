@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { Portfolio } from 'src/services/data-services/entities/portfolio.entity';
+import { Portfolio, StocksSchema } from 'src/services/data-services/entities/portfolio.entity';
 
 import { ConfigService } from '@nestjs/config';
 
@@ -13,7 +13,7 @@ export class PortfolioService {
     private readonly configService: ConfigService,
   ) {}
 
-  async getPortfolio(): Promise<Portfolio> {
+  async getPortfolio(): Promise<{ stocks: StocksSchema[] }> {
     try {
       const defaultUserId = this.configService.get('DEFAULT_USER_ID');
 
@@ -23,9 +23,9 @@ export class PortfolioService {
         throw new NotFoundException(`Portfolio not found.`);
       }
 
-      return portfolio;
+      return { stocks: portfolio.stocks };
     } catch (error) {
-      throw new InternalServerErrorException( `Error getting portfolio: ${error}`);
+      throw new InternalServerErrorException(`Error getting portfolio: ${error}`);
     }
   }
 }

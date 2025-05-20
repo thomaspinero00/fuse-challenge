@@ -7,6 +7,7 @@ import { DatabaseModule } from './services/data-services/database.module';
 import { SchedulerModule } from './domain/reports/report-scheduler.module';
 import { EmailServicesModule } from './services/email-services/email-services.module';
 import { VendorApiModule } from './services/vendor-services/vendor-api.module';
+import { StockCacheModule } from './services/cache-services/stock-cache.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -25,6 +26,7 @@ export class AppModule implements NestModule {
         StocksModule,
         PortfolioModule,
         SchedulerModule,
+        StockCacheModule,
       ],
       controllers: [AppController],
       providers: [],

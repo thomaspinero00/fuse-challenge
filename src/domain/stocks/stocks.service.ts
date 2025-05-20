@@ -6,13 +6,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-
 import { Portfolio } from 'src/services/data-services/entities/portfolio.entity';
 import mongoose, { Model } from 'mongoose';
 import { Transaction, TRANSACTION_STATUSES } from 'src/services/data-services/entities/transaction.entity';
 import { ConfigService } from '@nestjs/config';
 import * as dto from './dtos';
 import { VendorApiService } from 'src/services/vendor-services/vendor-api.service';
+import { StockCacheService } from 'src/services/cache-services/stock-cache.service';
+import { StockType } from './types/stocks.types';
 
 @Injectable()
 export class StocksService {
@@ -23,30 +24,51 @@ export class StocksService {
 
     private readonly configService: ConfigService,
     private readonly vendorService: VendorApiService,
+    private readonly stockCacheService: StockCacheService,
   ) {}
-  async getStocks(): Promise<any> {
+  async getStocks(): Promise<StockType[]> {
     try {
-      const vendorApiClient = await this.vendorService.getClient();
-      const stocks = await this.getStocksRecursively(vendorApiClient);
+      const cachedStocks = await this.stockCacheService.getStocks();
+      if (cachedStocks) {
+        return cachedStocks;
+      }
+      const allStocks = await this.getStocksAndSaveToCache();
 
-      return stocks;
+      return allStocks;
     } catch (error) {
-      this.logger.error('Error fetching stocks from vendor API:', error);
-      throw new InternalServerErrorException('Error fetching stocks from vendor API');
+      this.logger.error('Error fetching stocks:', error);
+      throw new InternalServerErrorException('Error fetching stocks');
     }
   }
 
   async buyStock(body: dto.StocksBuyDTO): Promise<void> {
     const { symbol, quantity, purchasePrice } = body;
-
     const defaultUserId = this.configService.get('DEFAULT_USER_ID');
     try {
+      const vendorApiClient = await this.vendorService.getClient();
+
       const portfolio = await this.portfolioRepository.findOne({ user: new mongoose.Types.ObjectId(defaultUserId) });
 
       if (!portfolio) {
         throw new NotFoundException('Portfolio not found');
       }
-      const currentPrice = await this.getCurrentStockPrice(symbol);
+
+      let cachedStocks = await this.stockCacheService.getStocks();
+
+      // in case the cache is empty
+      if (!cachedStocks) {
+        const stocks = await this.getStocksAndSaveToCache();
+        cachedStocks = stocks;
+      }
+
+      const stockInfo = cachedStocks.find((stock: StockType) => stock.symbol === symbol);
+
+      if (!stockInfo) {
+        throw new NotFoundException(`Stock ${symbol} not found`);
+      }
+
+      const currentPrice = stockInfo.price;
+
       const priceDifference = Math.abs(currentPrice - purchasePrice);
       if (priceDifference / currentPrice > 0.02) {
         await this.saveTransaction(
@@ -55,9 +77,23 @@ export class StocksService {
           quantity,
           purchasePrice,
           TRANSACTION_STATUSES.FAILED,
-          'Purchase price is not within allowed range',
+          'Invalid purchase price.',
         );
-        throw new BadRequestException('Purchase price is not within allowed range');
+        throw new BadRequestException('Invalid purchase price.');
+      }
+
+      try {
+        await vendorApiClient.post(`/stocks/${symbol}/buy`, { price: purchasePrice, quantity });
+      } catch (vendorError) {
+        await this.saveTransaction(
+          defaultUserId,
+          symbol,
+          quantity,
+          purchasePrice,
+          TRANSACTION_STATUSES.FAILED,
+          `Vendor API Error: ${vendorError.message}`,
+        );
+        throw new BadRequestException({ message: vendorError.message });
       }
 
       const existingStock = portfolio.stocks.find((stock: { symbol: string }) => stock.symbol === symbol);
@@ -71,6 +107,7 @@ export class StocksService {
 
       await portfolio.save();
       await this.saveTransaction(defaultUserId, symbol, quantity, purchasePrice, TRANSACTION_STATUSES.SUCCESSFUL);
+      return;
     } catch (error) {
       await this.saveTransaction(
         defaultUserId,
@@ -78,32 +115,14 @@ export class StocksService {
         quantity,
         purchasePrice,
         TRANSACTION_STATUSES.FAILED,
-        'Purchase price is not within allowed range',
+        `System Error: ${error}`,
       );
-      this.logger.error('Error in buyStock StocksService:', error);
-
+      this.logger.error('Error in buyStock:', error);
       throw new InternalServerErrorException('Error processing stock purchase');
     }
   }
 
   //--------------------------------------------   PRIVATE METHODS   --------------------------------------------
-  private async getCurrentStockPrice(symbol: string): Promise<number> {
-    try {
-      const vendorApiClient = await this.vendorService.getClient();
-
-      const items = await this.getStocksRecursively(vendorApiClient);
-
-      const item = items.find(
-        (stock: { lastUpdated: string; change: number; price: number; name: string; sector: string; symbol: string }) =>
-          stock.symbol === symbol,
-      );
-
-      return item ? item.price : 0;
-    } catch (error) {
-      this.logger.error('Error fetching current stock price:', error);
-      throw new InternalServerErrorException('Error fetching current stock price');
-    }
-  }
 
   private async saveTransaction(
     userId: string,
@@ -124,18 +143,38 @@ export class StocksService {
     await transaction.save();
   }
 
-  private async getStocksRecursively(vendorApiClient: any, nextToken?: string): Promise<any[]> {
-    try {
-      const response = await vendorApiClient.get('/stocks', { params: { nextToken } });
-      const items = response.data.data.items;
-      if (response.data.data.nextToken) {
-        const nextStocks = await this.getStocksRecursively(vendorApiClient, response.data.data.nextToken);
-        return [...items, ...nextStocks];
+  private async getStocksRecursively(): Promise<StockType[]> {
+    const allStocks = [];
+    let nextToken = null;
+    do {
+      try {
+        const vendorApiClient = await this.vendorService.getClient();
+
+        const response: {
+          data: {
+            data: {
+              items: StockType[];
+              nextToken: string | null;
+            };
+          };
+        } = await vendorApiClient.get('/stocks', { params: { nextToken } });
+
+        const items = response.data.data.items;
+        allStocks.push(...items);
+        nextToken = response.data.data.nextToken;
+      } catch (error) {
+        this.logger.error('Error fetching stocks:', error);
+        throw new InternalServerErrorException('Error fetching stocks');
       }
-      return items;
-    } catch (error) {
-      this.logger.error('Error fetching stocks recursively:', error);
-      throw new InternalServerErrorException('Error fetching stocks recursively');
-    }
+    } while (nextToken);
+    return allStocks;
+  }
+
+  private async getStocksAndSaveToCache(): Promise<StockType[]> {
+    const allStocks = await this.getStocksRecursively();
+
+    await this.stockCacheService.setStocks(allStocks);
+
+    return allStocks;
   }
 }

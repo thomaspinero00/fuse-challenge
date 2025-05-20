@@ -1,11 +1,13 @@
-import { Controller, Get, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, NotFoundException, InternalServerErrorException, UseGuards } from '@nestjs/common';
 import { PortfolioService } from './portfolios.service';
+import { ApiTokenGuard } from 'src/common/guards/api-token.guard';
 
 @Controller('portfolio')
 export class PortfolioController {
   constructor(private readonly portfolioService: PortfolioService) {}
 
   @Get('my-portfolio')
+  @UseGuards(ApiTokenGuard)
   async getPortfolio() {
     try {
       const portfolio = await this.portfolioService.getPortfolio();

@@ -10,8 +10,6 @@ export class StocksSchema {
   @Prop({ type: Number, required: true }) lastPurchasePrice: number;
 }
 
-
-
 @Schema({ timestamps: true })
 export class Portfolio {
   @Prop({ type: mongoose.Types.ObjectId, ref: 'User', required: true })

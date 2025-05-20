@@ -7,8 +7,8 @@ import { Model } from 'mongoose';
 import { IEmailServices } from 'src/common/interfaces/email-service.interface';
 
 @Injectable()
-export class SchedulerService {
-  private readonly logger = new Logger(SchedulerService.name); // Logger para este servicio
+export class ReportSchedulerService {
+  private readonly logger = new Logger(ReportSchedulerService.name);
 
   constructor(
     @InjectModel(User.name) private userRepository: Model<User>,
@@ -16,7 +16,7 @@ export class SchedulerService {
     @Inject(IEmailServices) private emailService: IEmailServices,
   ) {}
 
-  @Cron('0 0 * * *')
+  @Cron('0 0 * * *') // everyday at 00:00hs
   async handleCron() {
     this.logger.log('Executing cron job');
 

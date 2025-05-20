@@ -20,7 +20,7 @@ export class Transaction {
   price: number;
 
   @Prop({ type: String, enum: Object.values(TRANSACTION_STATUSES), required: true })
-  status: string;
+  status: TRANSACTION_STATUSES;
 
   @Prop({ type: String, required: false })
   failureReason?: string;
